@@ -12,13 +12,15 @@ end
 # The main juju
 class WeatherCube
   def initialize
-    fetch_and_show_weather
+    puts 'Starting up...'
+    show_weather
   end
 
   def start
     EventMachine.run do
+      puts 'Main event loop'
       @weather_timer = EventMachine::PeriodicTimer.new(15 * 60) do
-        fetch_and_show_weather
+        show_weather
       end
     end
   end
@@ -27,16 +29,48 @@ class WeatherCube
     @weather_timer.cancel
   end
 
-  def fetch_coordinates
-    coordinates = JSON.parse(Net::HTTP.get(URI('https://freegeoip.net/json/')))
-    @longitude = coordinates['longitude']
-    @latitude  = coordinates['latitude']
+  def show_weather
+    colors = weather_to_colors(
+      forecast.currently.icon,
+      forecast.currently.apparentTemperature,
+      Time.at(forecast.currently.time)
+    )
+    send_colors(colors)
   end
 
-  def fetch_and_show_weather
-    fetch_coordinates unless @latitude && @longitude
-    @forecast = ForecastIO.forecast(@latitude, @longitude)
-    puts "The weather is #{@forecast.currently.icon}, #{@forecast.currently.apparentTemperature}"
+  def weather_to_colors(time, temperature, description)
+    # Turn current time, temperature and description into a set of 6 colors
+    %w( ff0000 ff0000 00ff00 00ff00 0000ff 0000ff )
+  end
+
+  def send_colors(colors)
+    # Send colors to edged
+    puts 'colors received', colors
+  end
+
+  def forecast
+    unless (Time.now - last_forecast) < (10 * 60)
+      puts 'Fetching forecast...'
+      @forecast = ForecastIO.forecast(*coordinates)
+    end
+
+    @forecast
+  end
+
+  def last_forecast
+    @forecast ? Time.at(@forecast.currently.time) : Time.at(0)
+  end
+
+  def coordinates?
+    @location && @location['latitude'] && @location['longitude']
+  end
+
+  def coordinates
+    unless coordinates?
+      puts 'Fetching coordinates...'
+      @location = JSON.parse(Net::HTTP.get(URI('https://freegeoip.net/json/')))
+    end
+    [@location['latitude'], @location['longitude']]
   end
 end
 
