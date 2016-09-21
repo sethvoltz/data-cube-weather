@@ -6,7 +6,7 @@ require 'net/http'
 require 'json'
 
 ForecastIO.configure do |configuration|
-  configuration.api_key = 'this-is-your-api-key'
+  configuration.api_key = ENV['FORECAST_IO_KEY']
 end
 
 # The main juju
@@ -29,12 +29,14 @@ class WeatherCube
 
   def fetch_coordinates
     coordinates = JSON.parse(Net::HTTP.get(URI('https://freegeoip.net/json/')))
+    @longitude = coordinates['longitude']
+    @latitude  = coordinates['latitude']
   end
 
   def fetch_and_show_weather
     fetch_coordinates unless @latitude && @longitude
     @forecast = ForecastIO.forecast(@latitude, @longitude)
-    puts "The weather is #{@forecast.currently.icon}, #{forecast.currently.apparentTemperature}"
+    puts "The weather is #{@forecast.currently.icon}, #{@forecast.currently.apparentTemperature}"
   end
 end
 
