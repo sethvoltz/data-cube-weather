@@ -38,9 +38,28 @@ class WeatherCube
     send_colors(colors)
   end
 
-  def weather_to_colors(time, temperature, description)
+  def weather_to_colors(time, temperature, summary)
     # Turn current time, temperature and description into a set of 6 colors
-    %w( ff0000 ff0000 00ff00 00ff00 0000ff 0000ff )
+    # Color order on cube
+    # 1 \   / 3
+    #  2 \ / 4
+    #   6 |
+    #   5 |
+    [base_color(summary)] * 6
+  end
+
+  def base_color(summary)
+    # Summary can be one of:
+    #   clear-day, clear-night, rain, snow, sleet, wind, fog,
+    #   cloudy, partly-cloudy-day, or partly-cloudy-night
+    { 'clear-day' => '3ec3f5', 'clear-night' => '125e9c',
+      'rain' => '246dea',
+      'snow' => '88b5e3',
+      'sleet' => '65b9c2',
+      'wind' => 'aac399',
+      'fog' => '8ac5ae', 'cloudy' => '8ac5ae',
+      'partly-cloudy-day' => '9cc0c2', 'partly-cloudy-night' => '7996a7'
+    }[summary] || 'cccccc'
   end
 
   def send_colors(colors)
