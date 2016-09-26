@@ -4,3 +4,4 @@ source 'https://rubygems.org'
 
 gem 'eventmachine'
 gem 'forecast_io'
+gem 'color'

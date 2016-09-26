@@ -1,0 +1,11 @@
+[Unit]
+Description=Weather Daemon for Data SemiCube
+After=multi-user.target
+
+[Service]
+Type=idle
+EnvironmentFile=/home/pi/Projects/data-cube-weather/.env
+ExecStart=/usr/bin/ruby /home/pi/Projects/data-cube-weather/src/weatherd.rb
+
+[Install]
+WantedBy=multi-user.target

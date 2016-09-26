@@ -5,9 +5,15 @@ require 'forecast_io'
 require 'net/http'
 require 'socket'
 require 'json'
+require 'color'
+
+$stdout.sync = true # All logging flush immediately
 
 CUBE_HOST = 'localhost'.freeze
 CUBE_PORT = 8300
+
+PositiveInfinity = +1.0 / 0.0
+NegativeInfinity = -1.0 / 0.0
 
 ForecastIO.configure do |configuration|
   configuration.api_key = ENV['FORECAST_IO_KEY']
@@ -45,11 +51,17 @@ class WeatherCube
   def weather_to_colors(time, temperature, summary)
     # Turn current time, temperature and description into a set of 6 colors
     # Color order on cube
-    # 1 \   / 3
-    #  2 \ / 4
-    #   6 |
+    # 0 \   / 2
+    #  1 \ / 3
     #   5 |
-    [base_color(summary)] * 6
+    #   4 |
+    colors = [base_color(summary)] * 6
+
+    tip = tip_color(temperature)
+    colors[1] = hex_blend(colors[1], tip, 95)
+    colors[3] = hex_blend(colors[3], tip, 95)
+    colors[5] = hex_blend(colors[5], tip, 95)
+    colors
   end
 
   def base_color(summary)
@@ -66,9 +78,23 @@ class WeatherCube
     }[summary] || 'cccccc'
   end
 
+  def tip_color(temperature)
+    case temperature
+    when NegativeInfinity..32 then '1200da'  # cold blue
+    when 60..75 then '27d06c'                # pleasant green
+    when 75..85 then 'e1ad1a'                # yellowy hot
+    when 85..95 then 'db5915'                # orangy hot
+    when 95..PositiveInfinity then 'd52a23'  # hot red
+    end
+  end
+
+  def hex_blend(mask, base, opacity)
+    Color::RGB.by_hex(base).mix_with(Color::RGB.by_hex(mask), opacity).hex
+  end
+
   def send_colors(colors)
     # Send colors to edged
-    puts 'colors received', colors
+    puts "colors received: #{colors.to_json}"
     socket = TCPSocket.open(CUBE_HOST, CUBE_PORT)
     socket.print({
       'command' => 'setColors',
