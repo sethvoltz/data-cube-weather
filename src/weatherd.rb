@@ -3,7 +3,11 @@
 require 'eventmachine'
 require 'forecast_io'
 require 'net/http'
+require 'socket'
 require 'json'
+
+CUBE_HOST = 'localhost'.freeze
+CUBE_PORT = 8300
 
 ForecastIO.configure do |configuration|
   configuration.api_key = ENV['FORECAST_IO_KEY']
@@ -65,12 +69,26 @@ class WeatherCube
   def send_colors(colors)
     # Send colors to edged
     puts 'colors received', colors
+    socket = TCPSocket.open(CUBE_HOST, CUBE_PORT)
+    socket.print({
+      'command' => 'setColors',
+      'colors' => colors }.to_json + "\r\n")
+    if JSON.parse(socket.readline)['success'] == false
+      # TODO: Handler errors
+    end
+    socket.print("\r\n")
+    socket.close
   end
 
   def forecast
     unless (Time.now - last_forecast) < (10 * 60)
       puts 'Fetching forecast...'
       @forecast = ForecastIO.forecast(*coordinates)
+      result = [
+        @forecast.currently.icon,
+        @forecast.currently.apparentTemperature
+      ].join(', ')
+      puts " --> Forecast: #{result}"
     end
 
     @forecast
@@ -86,10 +104,25 @@ class WeatherCube
 
   def coordinates
     unless coordinates?
-      puts 'Fetching coordinates...'
-      @location = JSON.parse(Net::HTTP.get(URI('https://freegeoip.net/json/')))
+      @location = load_location_from_env || load_location_from_service
+      result = [@location['latitude'], @location['longitude']].join(', ')
+      puts " --> Coordinates: #{result}"
     end
     [@location['latitude'], @location['longitude']]
+  end
+
+  def load_location_from_service
+    puts 'Fetching coordinates...'
+    JSON.parse(Net::HTTP.get(URI('https://freegeoip.net/json/')))
+  end
+
+  def load_location_from_env
+    return unless ENV['LATITUDE'] && ENV['LONGITUDE']
+    puts 'Loading coordinates from environment...'
+    {
+      'latitude' => ENV['LATITUDE'].to_f,
+      'longitude' => ENV['LONGITUDE'].to_f
+    }
   end
 end
 
