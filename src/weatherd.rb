@@ -35,9 +35,9 @@ class WeatherCube
 
   def show_weather
     colors = weather_to_colors(
-      forecast.currently.icon,
+      Time.at(forecast.currently.time),
       forecast.currently.apparentTemperature,
-      Time.at(forecast.currently.time)
+      forecast.currently.icon
     )
     send_colors(colors)
   end
