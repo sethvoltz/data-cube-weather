@@ -58,9 +58,11 @@ class WeatherCube
     colors = [base_color(summary)] * 6
 
     tip = tip_color(temperature)
-    colors[1] = hex_blend(colors[1], tip, 95)
-    colors[3] = hex_blend(colors[3], tip, 95)
-    colors[5] = hex_blend(colors[5], tip, 95)
+    if tip
+      colors[1] = hex_blend(colors[1], tip, 95)
+      colors[3] = hex_blend(colors[3], tip, 95)
+      colors[5] = hex_blend(colors[5], tip, 95)
+    end
     colors
   end
 
@@ -68,7 +70,7 @@ class WeatherCube
     # Summary can be one of:
     #   clear-day, clear-night, rain, snow, sleet, wind, fog,
     #   cloudy, partly-cloudy-day, or partly-cloudy-night
-    { 'clear-day' => '3ec3f5', 'clear-night' => '125e9c',
+    { 'clear-day' => '3ec3f5', 'clear-night' => '0d3779',
       'rain' => '246dea',
       'snow' => '88b5e3',
       'sleet' => '65b9c2',
