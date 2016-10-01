@@ -100,7 +100,9 @@ class WeatherCube
     socket = TCPSocket.open(CUBE_HOST, CUBE_PORT)
     socket.print({
       'command' => 'setColors',
-      'colors' => colors }.to_json + "\r\n")
+      'colors' => colors,
+      'mode' => 'ambient'
+    }.to_json + "\r\n")
     if JSON.parse(socket.readline)['success'] == false
       # TODO: Handler errors
     end
